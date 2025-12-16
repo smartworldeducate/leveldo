@@ -11,10 +11,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { Bike, Mail, Lock } from 'lucide-react-native';
+import { Mail, Lock } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -25,46 +30,99 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Logo animation
+  // useEffect(() => {
+  //   Animated.loop(
+  //     Animated.sequence([
+  //       Animated.timing(logoAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+  //       Animated.timing(logoAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+  //     ])
+  //   ).start();
+
+  //   Animated.timing(textAnim, {
+  //     toValue: 1,
+  //     duration: 1500,
+  //     delay: 500,
+  //     useNativeDriver: true,
+  //   }).start();
+  // }, []);
 
   useEffect(() => {
-    // Logo pulse animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(logoAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(logoAnim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Text fade-in
-    Animated.timing(textAnim, {
+  Animated.sequence([
+    Animated.timing(logoAnim, {
       toValue: 1,
-      duration: 1500,
-      delay: 500,
+      duration: 800,
       useNativeDriver: true,
-    }).start();
-  }, [logoAnim, textAnim]);
+    }),
+    Animated.timing(logoAnim, {
+      toValue: 0,
+      duration: 800,
+      useNativeDriver: true,
+    }),
+  ]).start();
+
+  Animated.timing(textAnim, {
+    toValue: 1,
+    duration: 1500,
+    delay: 500,
+    useNativeDriver: true,
+  }).start();
+}, []);
+
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Missing Fields', 'Please enter both email and password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const snapshot = await firestore()
+        .collection('users')
+        .where('email', '==', email.trim())
+        .limit(1)
+        .get();
+
+      if (snapshot.empty) {
+        Alert.alert('Login Failed', 'No account found with this email.');
+        return;
+      }
+
+      const doc = snapshot.docs[0];
+      const userData = doc.data();
+
+      if (userData.password !== password) {
+        Alert.alert('Login Failed', 'Incorrect password.');
+        return;
+      }
+
+      const userWithId = { uid: doc.id, ...userData };
+      await AsyncStorage.setItem('user', JSON.stringify(userWithId));
+
+      navigation.replace('DrawerStack');
+    } catch (err) {
+      console.error('Login error:', err);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <LinearGradient colors={['#5a1d6a', '#b21f66']} style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-
+    <View style={styles.pageBackground}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1, width: '100%' }}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Animated Logo */}
+          {/* Logo */}
           <Animated.View
             style={[
               styles.logoContainer,
@@ -73,132 +131,125 @@ export default function LoginScreen() {
                   {
                     scale: logoAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [1, 1.2],
+                      outputRange: [1, 1.05],
                     }),
                   },
                 ],
               },
             ]}
           >
-            <View style={styles.iconWrapper}>
-              <Bike color="#fff" size={64} />
-            </View>
+            <Image source={{ uri: 'logo' }} style={styles.logoImage} />
           </Animated.View>
 
-          {/* App Name & Tagline */}
-          <Animated.View style={{ opacity: textAnim, alignItems: 'center', marginTop: 20 }}>
+          {/* App Name */}
+          <Animated.View style={{ opacity: textAnim, alignItems: 'center', marginTop: 16 }}>
             <Text style={styles.appName}>Leveldo</Text>
             <Text style={styles.tagline}>Make Your Life Easy</Text>
           </Animated.View>
 
           {/* Form */}
           <View style={styles.formContainer}>
-            {/* Email Input */}
-            <View style={styles.inputBox}>
-              <Mail color="#fff" size={20} />
+            <View style={styles.inputRow}>
+              <View style={styles.iconBox}>
+                <Mail color="#6b6b6b" size={18} />
+              </View>
               <TextInput
                 placeholder="Email"
-                placeholderTextColor="rgba(255,255,255,0.7)"
+                placeholderTextColor="#9b9b9b"
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
+                autoCapitalize="none"
               />
             </View>
 
-            {/* Password Input */}
-            <View style={styles.inputBox}>
-              <Lock color="#fff" size={20} />
+            <View style={styles.inputRow}>
+              <View style={styles.iconBox}>
+                <Lock color="#6b6b6b" size={18} />
+              </View>
               <TextInput
                 placeholder="Password"
-                placeholderTextColor="rgba(255,255,255,0.7)"
+                placeholderTextColor="#9b9b9b"
                 style={styles.input}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
+                autoCapitalize="none"
               />
             </View>
 
-            {/* Login Button */}
             <TouchableOpacity
-              style={styles.loginButton}
-              activeOpacity={0.85}
-              onPress={() => navigation.navigate('DrawerStack')}
+              style={styles.ctaWrapper}
+              onPress={handleLogin}
+              disabled={loading}
             >
               <LinearGradient
-                colors={['#5a1d6a', '#b21f66']}
+                colors={['#2eb872', '#16a34a']}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.gradientButton}
+                end={{ x: 1, y: 0 }}
+                style={styles.ctaGradient}
               >
-                <Text style={styles.buttonText}>Login Now</Text>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>Login Now</Text>}
               </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('SignupScreen')} style={{ marginTop: 16 }}>
+              <Text style={styles.signUpHint}>
+                Don’t have an account? <Text style={{ fontWeight: '700', color: '#2eb872' }}>Sign up</Text>
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* Bottom Shape */}
-      <Animated.View
-        style={[
-          styles.bottomShape,
-          {
-            transform: [
-              {
-                translateY: logoAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 10],
-                }),
-              },
-            ],
-          },
-        ]}
-      />
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  logoContainer: { alignItems: 'center', justifyContent: 'center' },
-  iconWrapper: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    padding: 30,
-    borderRadius: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+  pageBackground: {
+    flex: 1,
+    backgroundColor: '#f3f6f7',
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 36,
   },
-  appName: { fontSize: 32, fontWeight: '800', color: '#fff', textAlign: 'center' },
-  tagline: { fontSize: 16, color: '#fff', marginTop: 6, textAlign: 'center' },
-  formContainer: {
-    width: '85%',
-    marginTop: 30,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    flexGrow: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  inputBox: {
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    // backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 28,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 6 },
+    // shadowOpacity: 0.08,
+    // shadowRadius: 12,
+    // elevation: 3,
+  },
+  logoImage: { width: 120, height: 120, borderRadius: 16 },
+  appName: { fontSize: 28, fontWeight: '800', color: '#1D2671' },
+  tagline: { fontSize: 14, color: '#7b7b7b', marginTop: 6 },
+  formContainer: { width: '100%', marginTop: 24 },
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 15,
-    paddingHorizontal: 15,
-    height: 55,
-    marginBottom: 15,
+    backgroundColor: '#fafafa',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 52,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#eeeeee',
   },
-  input: { flex: 1, color: '#fff', marginLeft: 10, fontSize: 16 },
-  loginButton: { width: '100%', borderRadius: 25, overflow: 'hidden', marginTop: 15 },
-  gradientButton: { paddingVertical: 14, alignItems: 'center', borderRadius: 25 },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  bottomShape: {
-    position: 'absolute',
-    bottom: 0,
-    width: width,
-    height: 120,
-    borderTopLeftRadius: width / 2,
-    borderTopRightRadius: width / 2,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
+  iconBox: { width: 34, alignItems: 'center' },
+  input: { flex: 1, color: '#222', marginLeft: 8, fontSize: 15 },
+  ctaWrapper: { marginTop: 16, borderRadius: 30, overflow: 'hidden' },
+  ctaGradient: { paddingVertical: 14, alignItems: 'center', borderRadius: 30 },
+  ctaText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  signUpHint: { textAlign: 'center', color: '#7b7b7b', fontSize: 14 },
 });

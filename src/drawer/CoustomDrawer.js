@@ -1,180 +1,200 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { Briefcase, UserCog, Hammer, Users, LogOut,DollarSign } from 'lucide-react-native';
+import { Briefcase, DollarSign, LogOut } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// ✅ White/light theme object
+const theme = {
+  colors: {
+    background: '#FFFFFF',
+    primary: '#1D2671',
+    secondary: '#00D4FF',
+    accent: '#FFD700',
+    overlay: 'rgba(29,38,113,0.05)',
+    overlayLight: 'rgba(29,38,113,0.02)',
+    textPrimary: '#1D2671',
+    textSecondary: '#555555',
+    itemBg: '#F7F7F7',
+    logoutBg: '#FFEECD',
+  },
+  spacing: {
+    small: 10,
+    medium: 16,
+    large: 20,
+    xl: 40,
+  },
+  borderRadius: 18,
+  font: {
+    title: 26,
+    subtitle: 14,
+    item: 17,
+    footer: 16,
+    version: 12,
+  },
+};
 
 export default function CustomDrawer(props) {
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('user');
+      alert('Logged Out');
+      props.navigation.replace('LoginScreen');
+    } catch (error) {
+      console.log('Error removing user from AsyncStorage:', error);
+    }
+  };
+
   return (
-    <LinearGradient
-      colors={['#C33764', '#1D2671']}
-      start={{ x: 0, y: 1 }}
-      end={{ x: 1, y: 0 }}
-      style={styles.gradientContainer}
-    >
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.innerContainer}>
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.logoCircle}>
-              <Briefcase size={32} color="#FFD700" />
+            <View style={[styles.logoCircle, { backgroundColor: theme.colors.overlay }]}>
+              <Briefcase size={36} color={theme.colors.accent} />
             </View>
             <View>
-              <Text style={styles.headerTitle}>Leveldo</Text>
-              <Text style={styles.headerSub}>Manage tasks & users</Text>
+              <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>Leveldo</Text>
+              <Text style={[styles.headerSub, { color: theme.colors.textSecondary }]}>Manage tasks & users</Text>
             </View>
           </View>
 
           {/* Menu Items */}
           <View style={styles.menuContainer}>
             <DrawerItem
-              icon={<UserCog size={24} color="#FFD700" />}
-              label="Project Manager"
-              onPress={() => props.navigation.navigate('PMHomeScreen')}
+              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              label="Testmap"
+              onPress={() => props.navigation.navigate('Testmap')}
+              theme={theme}
             />
             <DrawerItem
-              icon={<Hammer size={24} color="#FFD700" />}
-              label="Service Provider"
-              onPress={() => props.navigation.navigate('SPHomeScreen')}
+              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              label="Create Request"
+              onPress={() => props.navigation.navigate('CreateRequestScreen')}
+              theme={theme}
             />
             <DrawerItem
-              icon={<Users size={24} color="#FFD700" />}
-              label="Customer"
-              onPress={() => props.navigation.navigate('CustomerListScreen')}
+              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              label="All Requests"
+              onPress={() => props.navigation.navigate('ProviderRequestsScreen')}
+              theme={theme}
             />
             <DrawerItem
-              icon={<Briefcase size={24} color="#FFD700" />}
-              label="Contracts"
-              onPress={() => props.navigation.navigate('ContractScreen')}
+              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              label="Customer Offers"
+              onPress={() => props.navigation.navigate('CustomerOffers')}
+              theme={theme}
             />
             <DrawerItem
-              icon={<DollarSign size={24} color="#FFD700" />}
-              label="Payments"
+              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              label="Provider Requests"
+              onPress={() => props.navigation.navigate('ProviderRequest')}
+              theme={theme}
+            />
+            <DrawerItem
+              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              label="PaymentScreen"
               onPress={() => props.navigation.navigate('PaymentScreen')}
+              theme={theme}
             />
           </View>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.logoutBtn} onPress={() => alert('Logged Out')}>
-              <LogOut size={22} color="#fff" />
-              <Text style={styles.logoutText}>Logout</Text>
+            <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: theme.colors.logoutBg }]} onPress={handleLogout}>
+              <LogOut size={22} color={theme.colors.primary} />
+              <Text style={[styles.logoutText, { color: theme.colors.primary }]}>Logout</Text>
             </TouchableOpacity>
-            <Text style={styles.versionText}>Version 1.0.0</Text>
+            <Text style={[styles.versionText, { color: theme.colors.textSecondary }]}>Version 1.0.0</Text>
           </View>
         </View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
 /* Drawer Item Component */
-const DrawerItem = ({ icon, label, onPress }) => (
-  <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.7}>
+const DrawerItem = ({ icon, label, onPress, theme }) => (
+  <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.8}>
     <LinearGradient
-      colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)']}
+      colors={[theme.colors.overlay, theme.colors.overlayLight]}
       style={styles.itemBackground}
     >
-      <View style={styles.iconContainer}>{icon}</View>
-      <Text style={styles.itemText}>{label}</Text>
+      <View style={[styles.iconContainer, { backgroundColor: theme.colors.itemBg }]}>{icon}</View>
+      <Text style={[styles.itemText, { color: theme.colors.textPrimary }]}>{label}</Text>
     </LinearGradient>
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-  },
-  innerContainer: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    justifyContent: 'space-between',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 40,
-  },
+  container: { flex: 1 },
+  innerContainer: { flex: 1, paddingTop: 60, paddingHorizontal: 20, justifyContent: 'space-between' },
+
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
   logoCircle: {
-    width: 65,
-    height: 65,
-    borderRadius: 32.5,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgba(29,38,113,0.1)',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 3,
   },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#FFD700',
-    letterSpacing: 0.5,
-  },
-  headerSub: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
-    marginTop: 2,
-  },
-  menuContainer: {
-    flex: 1,
-  },
-  item: {
-    marginBottom: 15,
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
+  headerTitle: { fontSize: theme.font.title, fontWeight: '800', letterSpacing: 0.5 },
+  headerSub: { fontSize: theme.font.subtitle, marginTop: 2 },
+
+  // Menu
+  menuContainer: { flex: 1 },
+  item: { marginBottom: 16, borderRadius: theme.borderRadius, overflow: 'hidden' },
   itemBackground: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    borderRadius: 18,
+    paddingVertical: theme.spacing.medium,
+    paddingHorizontal: theme.spacing.medium,
+    borderRadius: theme.borderRadius,
     // shadowColor: '#000',
-    // shadowOpacity: 0.1,
+    // shadowOpacity: 0.03,
     // shadowOffset: { width: 0, height: 3 },
-    // shadowRadius: 6,
-    // elevation: 4,
+    // shadowRadius: 5,
+    // elevation: 2,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 16,
   },
-  itemText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.4,
-  },
-  footer: {
-    marginBottom: 30,
-  },
+  itemText: { fontSize: theme.font.item, fontWeight: '600', letterSpacing: 0.5 },
+
+  // Footer
+  footer: { marginBottom: 30 },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,165,0,0.25)',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    borderRadius: theme.borderRadius,
+    paddingVertical: theme.spacing.medium,
+    paddingHorizontal: theme.spacing.medium,
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(29,38,113,0.1)',
     marginBottom: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 3,
   },
-  logoutText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-    marginLeft: 10,
-  },
-  versionText: {
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-  },
+  logoutText: { fontWeight: '700', fontSize: theme.font.footer, marginLeft: 10 },
+  versionText: { textAlign: 'center', fontSize: theme.font.version },
 });

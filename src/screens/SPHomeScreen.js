@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,58 +9,64 @@ import {
   SafeAreaView,
   ScrollView,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { Star, MapPin, Search } from 'lucide-react-native';
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from 'react-native-responsive-screen';
+import { MapPin, Search, Calendar } from 'lucide-react-native';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import firestore from '@react-native-firebase/firestore';
 import Header from '../components/Header';
 
 export default function SPHomeScreen({ navigation }) {
   const [search, setSearch] = useState('');
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const providers = [
-    {
-      id: 1,
-      name: 'John Carter',
-      role: 'Professional Plumber',
-      rating: 4.5,
-      location: 'Los Angeles, CA',
-      image: 'https://i.pravatar.cc/200?img=12',
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      role: 'Electrician',
-      rating: 4.8,
-      location: 'San Diego, CA',
-      image: 'https://i.pravatar.cc/200?img=32',
-    },
-    {
-      id: 3,
-      name: 'Mark Robinson',
-      role: 'Home Painter',
-      rating: 4.2,
-      location: 'San Francisco, CA',
-      image: 'https://i.pravatar.cc/200?img=45',
-    },
-    {
-      id: 4,
-      name: 'Emma Davis',
-      role: 'Carpenter',
-      rating: 4.7,
-      location: 'Sacramento, CA',
-      image: 'https://i.pravatar.cc/200?img=56',
-    },
-  ];
+  useEffect(() => {
+    const unsubscribe = firestore()
+      .collection('users')
+      .where('role', '==', 'Provider') // optional filter
+      .onSnapshot(
+        (querySnapshot) => {
+          const list = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            list.push({
+              id: doc.id,
+              name: data.name || 'No Name',
+              service: data.offerService?.[0] || 'No Service',
+              joined: data.createdAt
+                ? data.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                : 'N/A',
+              location: data.location || 'N/A',
+              image: data.photo || 'https://i.pravatar.cc/200',
+            });
+          });
+          setCustomers(list);
+          setLoading(false); // ✅ set loading to false after data fetched
+        },
+        (error) => {
+          console.error('Firestore fetch error:', error);
+          setLoading(false); // prevent infinite loading on error
+        }
+      );
 
-  const filteredProviders = providers.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.role.toLowerCase().includes(search.toLowerCase())
+    return () => unsubscribe();
+  }, []);
+
+  const filteredCustomers = customers.filter(
+    (c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.service.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#C33764' }}>
+        <ActivityIndicator size="large" color="#FFD700" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>
@@ -69,18 +75,19 @@ export default function SPHomeScreen({ navigation }) {
         colors={['#C33764', '#1D2671']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.container}>
+        style={styles.container}
+      >
         <SafeAreaView style={{ flex: 1 }}>
           {/* Header */}
           <View style={{ marginTop: hp(6), marginHorizontal: hp(1.5) }}>
-            <Header navigation={navigation} title="Top Service Providers" />
+            <Header navigation={navigation} title="Customer List" />
           </View>
 
-          {/* Search */}
+          {/* Search Bar */}
           <View style={styles.searchContainer}>
             <Search color="#C33764" size={20} />
             <TextInput
-              placeholder="Search name or service..."
+              placeholder="Search by name or service..."
               placeholderTextColor="#999"
               style={styles.searchInput}
               value={search}
@@ -88,61 +95,65 @@ export default function SPHomeScreen({ navigation }) {
             />
           </View>
 
-          {/* Provider Cards */}
+          {/* Customer Cards */}
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: hp('5%') }}>
-            {filteredProviders.map((provider) => (
-              <LinearGradient
-                key={provider.id}
-                colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0.15)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.card}>
-                <View style={styles.cardTop}>
-                  <Image source={{ uri: provider.image }} style={styles.avatar} />
-                  <View style={{ flex: 1, marginLeft: wp('4%') }}>
-                    <Text style={styles.name}>{provider.name}</Text>
-                    <View style={styles.roleBadge}>
-                      <Text style={styles.roleText}>{provider.role}</Text>
-                    </View>
-
-                    {/* Rating */}
-                    <View style={styles.ratingContainer}>
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Star
-                          key={i}
-                          size={16}
-                          color={i <= Math.floor(provider.rating) ? '#FFD700' : '#bbb'}
-                          fill={i <= Math.floor(provider.rating) ? '#FFD700' : 'none'}
-                          style={i <= Math.floor(provider.rating) && styles.starGlow}
-                        />
-                      ))}
-                      <Text style={styles.ratingText}>{provider.rating}</Text>
-                    </View>
-
-                    {/* Location */}
-                    <View style={styles.locationRow}>
-                      <MapPin size={14} color="#FFD700" />
-                      <Text style={styles.locationText}>{provider.location}</Text>
+            contentContainerStyle={{ paddingBottom: hp('6%') }}
+          >
+            {filteredCustomers.length === 0 ? (
+              <Text
+                style={{
+                  color: '#fff',
+                  textAlign: 'center',
+                  marginTop: hp('5%'),
+                  fontSize: hp('2%'),
+                }}
+              >
+                No customers found.
+              </Text>
+            ) : (
+              filteredCustomers.map((cust) => (
+                <LinearGradient
+                  key={cust.id}
+                  colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0.15)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.card}
+                >
+                  <View style={styles.cardTop}>
+                    <Image source={{ uri: cust.image }} style={styles.avatar} />
+                    <View style={{ flex: 1, marginLeft: wp('4%') }}>
+                      <Text style={styles.name}>{cust.name}</Text>
+                      <View style={styles.serviceBadge}>
+                        <Text style={styles.serviceText}>{cust.service}</Text>
+                      </View>
+                      <View style={styles.locationRow}>
+                        <MapPin size={14} color="#FFD700" />
+                        <Text style={styles.locationText}>{cust.location}</Text>
+                      </View>
+                      <View style={styles.joinRow}>
+                        <Calendar size={14} color="#FFD700" />
+                        <Text style={styles.joinText}>Joined {cust.joined}</Text>
+                      </View>
                     </View>
                   </View>
-                </View>
 
-                {/* Button */}
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => navigation.navigate('ProfileScreen')}>
-                  <LinearGradient
-                    colors={['#1D2671', '#C33764']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.buttonGradient}>
-                    <Text style={styles.buttonText}>View Profile</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </LinearGradient>
-            ))}
+                  <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => navigation.navigate('ProfileScreen', { customer: cust })}
+                  >
+                    <LinearGradient
+                      colors={['#1D2671', '#C33764']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Text style={styles.buttonText}>View Details</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </LinearGradient>
+              ))
+            )}
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
@@ -150,12 +161,10 @@ export default function SPHomeScreen({ navigation }) {
   );
 }
 
-/* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fff' },
   container: { flex: 1 },
-
-searchContainer: {
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -178,7 +187,6 @@ searchContainer: {
     fontSize: hp('2%'),
     fontWeight: '500',
   },
-
   card: {
     marginHorizontal: wp('5%'),
     marginTop: hp('2.5%'),
@@ -187,23 +195,16 @@ searchContainer: {
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
   },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  cardTop: { flexDirection: 'row', alignItems: 'center' },
   avatar: {
-    width: wp('22%'),
-    height: wp('22%'),
-    borderRadius: wp('11%'),
+    width: wp('20%'),
+    height: wp('20%'),
+    borderRadius: wp('10%'),
     borderWidth: 2,
     borderColor: '#FFD700',
   },
-  name: {
-    fontSize: hp('2.3%'),
-    fontWeight: '700',
-    color: '#fff',
-  },
-  roleBadge: {
+  name: { fontSize: hp('2.3%'), fontWeight: '700', color: '#fff' },
+  serviceBadge: {
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -211,49 +212,12 @@ searchContainer: {
     alignSelf: 'flex-start',
     marginTop: 4,
   },
-  roleText: {
-    color: '#FFD700',
-    fontWeight: '600',
-    fontSize: hp('1.7%'),
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: hp('0.6%'),
-  },
-  starGlow: {
-    shadowColor: '#FFD700',
-    shadowOpacity: 0.7,
-    shadowRadius: 6,
-  },
-  ratingText: {
-    color: '#FFD700',
-    marginLeft: 6,
-    fontWeight: '600',
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 3,
-  },
-  locationText: {
-    color: 'rgba(255,255,255,0.9)',
-    marginLeft: 5,
-    fontSize: hp('1.8%'),
-  },
-  button: {
-    marginTop: hp('2%'),
-    borderRadius: 25,
-    overflow: 'hidden',
-  },
-  buttonGradient: {
-    paddingVertical: hp('1.5%'),
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: hp('2%'),
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
+  serviceText: { color: '#FFD700', fontWeight: '600', fontSize: hp('1.7%') },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  locationText: { color: 'rgba(255,255,255,0.9)', marginLeft: 5, fontSize: hp('1.8%') },
+  joinRow: { flexDirection: 'row', alignItems: 'center', marginTop: 3 },
+  joinText: { color: 'rgba(255,255,255,0.9)', marginLeft: 5, fontSize: hp('1.8%') },
+  button: { marginTop: hp('2%'), borderRadius: 25, overflow: 'hidden' },
+  buttonGradient: { paddingVertical: hp('1.5%'), alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: hp('2%'), fontWeight: '700', textTransform: 'uppercase' },
 });

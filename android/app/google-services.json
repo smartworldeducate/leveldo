@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "963853518910",
+    "project_id": "leveldo-43cdc",
+    "storage_bucket": "leveldo-43cdc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:963853518910:android:46a11a3b34bf9750c1296f",
+        "android_client_info": {
+          "package_name": "com.leveldo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAO1Ai3T1DsFVEdrl71Cwj_GTZtIsyNDDQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
