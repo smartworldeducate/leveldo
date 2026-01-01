@@ -11,7 +11,8 @@ import {
   PermissionsAndroid,
   Platform,
   Linking,
-  Modal
+  Modal,
+  StatusBar
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import firestore from '@react-native-firebase/firestore';
@@ -172,11 +173,9 @@ export default function CreateRequestScreen({ navigation }) {
   };
 
   return (
-    <LinearGradient colors={['#ffffff','#f7f7f7']} style={styles.container}>
-      {/* <View style={{ marginTop: hp(6), marginHorizontal: hp(1.5) }}>
-        <Header navigation={navigation} title="Create Request" />
-      </View> */}
-
+    <LinearGradient colors={['#f3f6f7','#f3f6f7']} style={styles.container}>
+      <StatusBar translucent barStyle="dark-content" backgroundColor="transparent" />
+      
       <ScrollView contentContainerStyle={styles.inner}>
         <Text style={styles.label}>Title</Text>
         <TextInput value={title} onChangeText={setTitle} style={styles.input} placeholder="e.g. Kitchen painting" placeholderTextColor="#999" />
@@ -192,10 +191,8 @@ export default function CreateRequestScreen({ navigation }) {
 
         <Text style={styles.label}>Location</Text>
         <View style={{ flexDirection:'row', gap:10 }}>
-          <TextInput value={location} onChangeText={setLocation} style={[styles.input,{flex:1}]} placeholder="Lat, Long" placeholderTextColor="#999" />
-          <TouchableOpacity onPress={getCurrentLocation} style={styles.smallBtn}>
-            <Text style={{ color:'#fff', fontSize:12 }}>GPS</Text>
-          </TouchableOpacity>
+          <TextInput value={location} onFocus={getCurrentLocation} onChangeText={setLocation} style={[styles.input,{flex:1}]} placeholder="Lat, Long" placeholderTextColor="#999" />
+          
         </View>
 
         <TouchableOpacity style={styles.btn} onPress={openMapPicker} disabled={loading}>
@@ -204,10 +201,6 @@ export default function CreateRequestScreen({ navigation }) {
           </LinearGradient>
 
         </TouchableOpacity>
-
-        {/* <TouchableOpacity onPress={openInMaps} style={styles.mapBtn}>
-          <Text style={{color:'#1D2671', fontWeight:'700'}}>Open in Maps</Text>
-        </TouchableOpacity> */}
 
         <TouchableOpacity style={styles.btn} onPress={handleSubmit} disabled={loading}>
           <LinearGradient colors={['#2eb872', '#16a34a']} start={{x:0,y:1}} end={{x:1,y:0}} style={styles.btnGrad}>
@@ -254,11 +247,19 @@ export default function CreateRequestScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex:1 },
-  inner: { padding: wp(5), paddingBottom:50 },
+  container: { flex:1, paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 36 },
+  inner: { padding: wp(5), paddingBottom:100 },
   label: { color:'#1D2671', marginTop:12, marginBottom:6, fontWeight:'600', fontSize: hp(2) },
-  input: { backgroundColor:'#f0f0f0', color:'#1D2671', padding:14, borderRadius:12, fontSize: hp(1.9) },
-  smallBtn: { backgroundColor:'#1D2671', paddingHorizontal:12, justifyContent:'center', borderRadius:8 },
+  input: { flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fafafa',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 52,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#eeeeee' },
+  smallBtn: { backgroundColor:'#16a34a', paddingHorizontal:12, paddingVertical:hp(2), justifyContent:'center', borderRadius:8 },
   mapBtn: { backgroundColor:'#2eb872', padding:14, borderRadius:12, marginTop:10, alignItems:'center'},
   btn: { marginTop:18, borderRadius:30, overflow:'hidden' },
   btnGrad: { paddingVertical:16, alignItems:'center' },

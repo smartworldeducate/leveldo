@@ -12,6 +12,7 @@ import {
   Platform,
   PermissionsAndroid,
   Modal,
+  StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import firestore from '@react-native-firebase/firestore';
@@ -188,11 +189,8 @@ export default function RequestDetailsScreen({ route, navigation }) {
   );
 
   return (
-    <LinearGradient colors={['#f7f7f7', '#ffffff']} style={{flex:1}}>
-      {/* <View style={{ marginTop: hp(6), marginHorizontal: hp(1.5) }}>
-        <Header navigation={navigation} title="Request Details" />
-      </View> */}
-
+    <LinearGradient colors={['#f3f6f7', '#f3f6f7']} style={{flex:1,marginVertical:hp(3)}}>
+      <StatusBar translucent barStyle="dark-content" backgroundColor="transparent" />
       <ScrollView contentContainerStyle={{padding: wp(5)}}>
         {/* Request Card */}
         <LinearGradient colors={['#ffffff','#f0f0f0']} style={styles.card}>
@@ -305,7 +303,7 @@ export default function RequestDetailsScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   loading: { flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#f7f7f7' },
-  card: { padding: wp(4), borderRadius:16, marginBottom:16, backgroundColor:'#fff' },
+  card: {marginVertical:hp(3),padding:12, borderRadius:16, marginBottom:16, backgroundColor:'#fff' },
   customerImg: { width:60, height:60, borderRadius:30 },
   customerImgPlaceholder: { width:60, height:60, borderRadius:30, backgroundColor:'#e0e0e0' },
   title: { color:'#1D2671', fontSize: hp(2.4), fontWeight:'700' },
@@ -313,7 +311,15 @@ const styles = StyleSheet.create({
   small: { color:'#777', marginTop:6, fontSize: hp(1.6) },
   infoRow: { flexDirection:'row', justifyContent:'space-between', marginTop:12 },
   label: { color:'#1D2671', marginTop:12, fontWeight:'700', fontSize: hp(1.9) },
-  input: { backgroundColor:'#f0f0f0', color:'#1D2671', padding:14, borderRadius:12, marginTop:6, fontSize: hp(1.8) },
+  input: {     flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fafafa',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 52,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#eeeeee', },
   locationBtn: { marginTop:10, borderRadius:30, overflow:'hidden' },
   sendBtn: { paddingVertical:16, alignItems:'center', borderRadius:30 },
   sendBtnText: { fontWeight:'700', color:'#fff', fontSize: hp(1.9) },

@@ -16,19 +16,19 @@ import SignupScreen from './screens/SignupScreen';
 import LoginScreen from './screens/LoginScreen';
 import LinearGradient from 'react-native-linear-gradient';
 import ProfileScreen from './screens/ProfileScreen';
-import Test from './screens/Test';
-import TestQRScanner from './screens/TestQRScanner';
-import SPHomeScreen from './screens/SPHomeScreen';
-import CustomerListScreen from './screens/CustomerListScreen';
+// import Test from './screens/Test';
+// import TestQRScanner from './screens/TestQRScanner';
+// import SPHomeScreen from './screens/SPHomeScreen';
+// import CustomerListScreen from './screens/CustomerListScreen';
 import ContractScreen from './screens/ContractScreen';
 import PaymentScreen from './screens/PaymentScreen';
 import PMHomeScreen from './screens/PMHomeScreen';
-import IncomingRequestsScreen from './screens/IncomingRequestsScreen';
+// import IncomingRequestsScreen from './screens/IncomingRequestsScreen';
 import CreateRequestScreen from './screens/CreateRequestScreen';
 import ProviderRequestsScreen from './screens/ProviderRequestsScreen';
 import RequestDetailsScreen from './screens/RequestDetailsScreen';
-import CustomerOffersScreen from './screens/CustomerOffersScreen';
-import ProviderRequest from './screens/ProviderRequest';
+// import CustomerOffersScreen from './screens/CustomerOffersScreen';
+// import ProviderRequest from './screens/ProviderRequest';
 import MapViewScreen from './screens/MapViewScreen';
 import Mapview from './screens/Mapview';
 import Testmap from './screens/Testmap';
@@ -105,19 +105,19 @@ export default function Routes() {
         <Stack.Screen name="DrawerStack" component={DrawerStack} />
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-        <Stack.Screen name="Test" component={Test} />
-        <Stack.Screen name="TestQRScanner" component={TestQRScanner} />
-        <Stack.Screen name="SPHomeScreen" component={SPHomeScreen} />
-        <Stack.Screen name="CustomerListScreen" component={CustomerListScreen} />
+        {/* <Stack.Screen name="Test" component={Test} /> */}
+        {/* <Stack.Screen name="TestQRScanner" component={TestQRScanner} /> */}
+        {/* <Stack.Screen name="SPHomeScreen" component={SPHomeScreen} /> */}
+        {/* <Stack.Screen name="CustomerListScreen" component={CustomerListScreen} /> */}
         <Stack.Screen name="ContractScreen" component={ContractScreen} />
         <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
         <Stack.Screen name="PMHomeScreen" component={PMHomeScreen} />
         <Stack.Screen name="CreateRequestScreen" component={CreateRequestScreen} />
-        <Stack.Screen name="ProviderRequestsScreen" component={ProviderRequestsScreen} />
+        {/* <Stack.Screen name="ProviderRequestsScreen" component={ProviderRequestsScreen} /> */}
         <Stack.Screen name="RequestDetails" component={RequestDetailsScreen} />
-        <Stack.Screen name="CustomerOffers" component={CustomerOffersScreen} />
-        <Stack.Screen name="IncomingRequestsScreen" component={IncomingRequestsScreen} />
-        <Stack.Screen name="ProviderRequest" component={ProviderRequest} />
+        {/* <Stack.Screen name="CustomerOffers" component={CustomerOffersScreen} /> */}
+        {/* <Stack.Screen name="IncomingRequestsScreen" component={IncomingRequestsScreen} /> */}
+        {/* <Stack.Screen name="ProviderRequest" component={ProviderRequest} /> */}
         <Stack.Screen name="MapViewScreen" component={MapViewScreen} />
         <Stack.Screen name="Mapview" component={Mapview} />
         <Stack.Screen name="Testmap" component={Testmap} />

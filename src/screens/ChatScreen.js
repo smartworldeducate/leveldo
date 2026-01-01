@@ -10,195 +10,225 @@ import {
   Platform,
   Animated,
   Image,
-  Alert,
   StatusBar,
+  Pressable,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ImagePicker from 'react-native-image-crop-picker';
-import { Send, Camera, X } from 'lucide-react-native';
+import { Send, Camera, X, CheckCheck } from 'lucide-react-native';
 
-/* ---------- Cloudinary Config ---------- */
-const CLOUDINARY_UPLOAD_PRESET = 'profile_image';
-const CLOUDINARY_CLOUD_NAME = 'dejuhbel3';
-const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
-
-const uploadImageToCloudinary = async (uri) => {
-  try {
-    const data = new FormData();
-    const fileUri = Platform.OS === 'android' && !uri.startsWith('file://') ? 'file://' + uri : uri;
-
-    data.append('file', { uri: fileUri, type: 'image/jpeg', name: 'chat.jpg' });
-    data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
-    const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: data });
-    const result = await res.json();
-
-    if (result?.secure_url) return result.secure_url;
-    throw new Error(result?.error?.message || 'Image upload failed');
-  } catch (error) {
-    throw new Error(error.message || 'Cloudinary upload failed');
-  }
+/* ================= DESIGN SYSTEM ================= */
+const COLORS = {
+  primary: '#22C55E',
+  background: '#EEF2F5',
+  surface: '#FFFFFF',
+  bubbleMe: '#22C55E',
+  bubbleOther: '#FFFFFF',
+  textDark: '#111827',
+  textLight: '#FFFFFF',
+  muted: '#6B7280',
+  inputBg: '#F1F5F9',
 };
 
-/* ---------- Format Time ---------- */
-const formatTime = (date) => (date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
+const SHADOW = {
+  shadowColor: '#000',
+  shadowOpacity: 0.08,
+  shadowRadius: 6,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 2,
+};
 
-/* ---------- Message Bubble ---------- */
+/* ================= HELPERS ================= */
+const formatTime = (date) =>
+  date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+/* ================= MESSAGE ITEM ================= */
 const MessageItem = ({ item, isMe }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+    Animated.timing(fade, {
+      toValue: 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   return (
-    <Animated.View style={{ opacity: fadeAnim }}>
-      <View style={[styles.msgContainer, isMe ? styles.meContainer : styles.otherContainer]}>
-        {!isMe && <Image source={{ uri: item.avatar || 'https://i.pravatar.cc/300' }} style={styles.avatar} />}
-        <View style={[styles.msgBubble, isMe ? styles.meBubble : styles.otherBubble]}>
-          {item.image && <Image source={{ uri: item.image }} style={{ width: 180, height: 180, borderRadius: 12, marginBottom: item.text ? 6 : 0 }} />}
-          {item.text && <Text style={[styles.msgText, isMe && styles.meText]}>{item.text}</Text>}
-          {item.createdAt?.toDate && <Text style={styles.timestamp}>{formatTime(item.createdAt.toDate())}</Text>}
+    <Animated.View style={{ opacity: fade }}>
+      <View
+        style={[
+          styles.msgRow,
+          isMe ? styles.rowRight : styles.rowLeft,
+        ]}
+      >
+        <View
+          style={[
+            styles.msgBubble,
+            isMe ? styles.meBubble : styles.otherBubble,
+          ]}
+        >
+          {item.image && (
+            <Image source={{ uri: item.image }} style={styles.imageMsg} />
+          )}
+
+          {item.text ? (
+            <Text style={[styles.msgText, isMe && styles.meText]}>
+              {item.text}
+            </Text>
+          ) : null}
+
+          <View style={styles.metaRow}>
+            <Text style={styles.time}>
+              {formatTime(item.createdAt?.toDate?.())}
+            </Text>
+
+            {isMe && (
+              <CheckCheck
+                size={14}
+                color={item.seen ? '#16A34A' : COLORS.muted}
+              />
+            )}
+          </View>
         </View>
       </View>
     </Animated.View>
   );
 };
 
-/* ---------- ChatScreen ---------- */
+/* ================= CHAT SCREEN ================= */
 export default function ChatScreen({ route }) {
-  const { chatId, participants } = route.params; // participants: [user1Id, user2Id]
+  const { chatId } = route.params;
+
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
+
   const flatListRef = useRef(null);
+  const chatRef = firestore().collection('chats').doc(chatId);
 
+  /* ---------- LOAD USER ---------- */
   useEffect(() => {
-    const init = async () => {
-      const storedUser = await AsyncStorage.getItem('user');
-      if (storedUser) setUser(JSON.parse(storedUser));
+    (async () => {
+      const stored = await AsyncStorage.getItem('user');
+      if (stored) setUser(JSON.parse(stored));
+    })();
+  }, []);
 
-      // Ensure chat document exists
-      const chatRef = firestore().collection('chats').doc(chatId);
-      const chatSnap = await chatRef.get();
-      if (!chatSnap.exists) {
-        await chatRef.set({
-          participants: participants || [],
-          createdAt: firestore.FieldValue.serverTimestamp(),
-          lastMessage: '',
-          updatedAt: firestore.FieldValue.serverTimestamp(),
+  /* ---------- LISTEN ---------- */
+  useEffect(() => {
+    if (!user) return;
+
+    const unsub = chatRef
+      .collection('messages')
+      .orderBy('createdAt', 'asc')
+      .onSnapshot((snap) => {
+        const data = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
+        setMessages(data);
+
+        snap.docs.forEach((doc) => {
+          const msg = doc.data();
+          if (msg.senderId !== user.uid && !msg.seen) {
+            doc.ref.update({ seen: true });
+          }
         });
-      }
+      });
 
-      // Real-time listener for both sides
-      const unsubscribe = chatRef
-        .collection('messages')
-        .orderBy('createdAt', 'asc')
-        .onSnapshot((snap) => {
-          const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-          setMessages(data);
-        });
+    return unsub;
+  }, [user]);
 
-      return () => unsubscribe();
-    };
-
-    init();
-  }, [chatId]);
-
+  /* ---------- SEND ---------- */
   const sendMessage = async () => {
     if (!text.trim() && !selectedImage) return;
 
-    const chatRef = firestore().collection('chats').doc(chatId);
-    let imageUrl = null;
-
-    if (selectedImage) {
-      try {
-        imageUrl = await uploadImageToCloudinary(selectedImage);
-      } catch (err) {
-        Alert.alert('Upload Error', err.message || 'Failed to upload image');
-        return;
-      }
-    }
-
-    const payload = {
+    await chatRef.collection('messages').add({
       text: text.trim(),
-      image: imageUrl,
+      image: selectedImage || null,
       senderId: user.uid,
       createdAt: firestore.FieldValue.serverTimestamp(),
-    };
+      seen: false,
+    });
 
-    try {
-      await chatRef.collection('messages').add(payload);
-      await chatRef.update({
-        lastMessage: text.trim() || '📷 Image',
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-      });
-      setText('');
-      setSelectedImage(null);
-    } catch (err) {
-      console.log('Send message error:', err.message);
-    }
+    setText('');
+    setSelectedImage(null);
   };
 
+  /* ---------- IMAGE ---------- */
   const pickImage = async () => {
-    try {
-      const image = await ImagePicker.openPicker({ width: 400, height: 400, cropping: true, compressImageQuality: 0.8 });
-      setSelectedImage(image.path);
-    } catch (err) {
-      if (err?.code !== 'E_PICKER_CANCELLED') Alert.alert('Image Error', err.message || String(err));
-    }
-  };
-
-  const openCamera = async () => {
-    try {
-      const image = await ImagePicker.openCamera({ width: 400, height: 400, cropping: true, compressImageQuality: 0.8 });
-      setSelectedImage(image.path);
-    } catch (err) {
-      if (err?.code !== 'E_PICKER_CANCELLED') Alert.alert('Camera Error', err.message || String(err));
-    }
-  };
-
-  const handleImageOption = () => {
-    Alert.alert('Send Image', 'Choose an option', [
-      { text: 'Camera', onPress: openCamera },
-      { text: 'Gallery', onPress: pickImage },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    const img = await ImagePicker.openPicker({
+      width: 500,
+      height: 500,
+      cropping: true,
+    });
+    setSelectedImage(img.path);
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
-        <StatusBar translucent barStyle="dark-content" backgroundColor="transparent" />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={90}
+    >
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+
       <FlatList
         ref={flatListRef}
         data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <MessageItem item={item} isMe={item.senderId === user?.uid} />}
-        contentContainerStyle={{ padding: 12, paddingBottom: 20 }}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        keyExtractor={(i) => i.id}
+        renderItem={({ item }) => (
+          <MessageItem
+            item={item}
+            isMe={item.senderId === user?.uid}
+          />
+        )}
+        contentContainerStyle={styles.listContent}
+        onContentSizeChange={() =>
+          flatListRef.current?.scrollToEnd({ animated: true })
+        }
       />
 
+      {/* IMAGE PREVIEW */}
       {selectedImage && (
-        <View style={styles.imagePreviewContainer}>
-          <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
-          <TouchableOpacity onPress={() => setSelectedImage(null)} style={styles.removeImageBtn}>
-            <X size={18} color="#fff" />
+        <View style={styles.previewCard}>
+          <Image source={{ uri: selectedImage }} style={styles.previewImg} />
+          <TouchableOpacity
+            style={styles.removeBtn}
+            onPress={() => setSelectedImage(null)}
+          >
+            <X size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       )}
 
+      {/* INPUT */}
       <View style={styles.inputRow}>
-        <TouchableOpacity onPress={handleImageOption} style={styles.cameraBtn}>
-          <Camera size={22} color="#4CAF50" />
+        <TouchableOpacity onPress={pickImage} style={styles.iconBtn}>
+          <Camera size={22} color={COLORS.primary} />
         </TouchableOpacity>
 
-        <TextInput value={text} onChangeText={setText} style={styles.input} placeholder="Type a message…" multiline />
+        <TextInput
+          style={styles.input}
+          value={text}
+          onChangeText={setText}
+          placeholder="Type a message…"
+          placeholderTextColor={COLORS.muted}
+          multiline
+        />
 
-        <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
-          <Send size={22} color="#fff" />
+        <TouchableOpacity
+          style={[
+            styles.sendBtn,
+            { opacity: text.trim() || selectedImage ? 1 : 0.4 },
+          ]}
+          onPress={sendMessage}
+          disabled={!text.trim() && !selectedImage}
+        >
+          <Send size={20} color="#fff" />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -207,22 +237,127 @@ export default function ChatScreen({ route }) {
 
 /* ================= STYLES ================= */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f3f6f7' },
-  msgContainer: { marginVertical: 6, flexDirection: 'row', alignItems: 'flex-end' },
-  meContainer: { justifyContent: 'flex-end' },
-  otherContainer: { justifyContent: 'flex-start' },
-  avatar: { width: 36, height: 36, borderRadius: 18, marginRight: 8 },
-  msgBubble: { maxWidth: '75%', padding: 12, borderRadius: 20, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
-  meBubble: { backgroundColor: '#4CAF50', borderTopRightRadius: 4 },
-  otherBubble: { backgroundColor: '#fff', borderTopLeftRadius: 4 },
-  msgText: { fontSize: 16, color: '#2B2B2B' },
-  meText: { color: '#fff' },
-  timestamp: { fontSize: 10, color: '#888', alignSelf: 'flex-end', marginTop: 4 },
-  inputRow: { flexDirection: 'row', padding: 10, backgroundColor: '#fff', alignItems: 'center', borderTopWidth: 0.5, borderColor: '#ddd' },
-  input: { flex: 1, backgroundColor: '#F2F2F7', borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, fontSize: 16, maxHeight: 120 },
-  sendBtn: { backgroundColor: '#4CAF50', borderRadius: 24, padding: 12, marginLeft: 8, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-  cameraBtn: { backgroundColor: '#fff', borderRadius: 24, padding: 10, marginRight: 8, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-  imagePreviewContainer: { flexDirection: 'row', alignItems: 'center', padding: 8, marginHorizontal: 10, marginBottom: 6, backgroundColor: '#f2f2f2', borderRadius: 12, position: 'relative' },
-  imagePreview: { width: 80, height: 80, borderRadius: 12 },
-  removeImageBtn: { position: 'absolute', top: 4, right: 4, backgroundColor: '#4CAF50', borderRadius: 12, padding: 4 },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+
+  listContent: {
+    padding: 14,
+    paddingBottom: 24,
+  },
+
+  msgRow: {
+    marginVertical: 6,
+    flexDirection: 'row',
+  },
+
+  rowRight: {
+    justifyContent: 'flex-end',
+  },
+
+  rowLeft: {
+    justifyContent: 'flex-start',
+  },
+
+  msgBubble: {
+    maxWidth: '78%',
+    padding: 12,
+    borderRadius: 18,
+    ...SHADOW,
+  },
+
+  meBubble: {
+    backgroundColor: COLORS.bubbleMe,
+    borderBottomRightRadius: 4,
+  },
+
+  otherBubble: {
+    backgroundColor: COLORS.bubbleOther,
+    borderBottomLeftRadius: 4,
+  },
+
+  msgText: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: COLORS.textDark,
+  },
+
+  meText: {
+    color: COLORS.textLight,
+  },
+
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 6,
+    gap: 4,
+  },
+
+  time: {
+    fontSize: 11,
+    color: COLORS.muted,
+  },
+
+  imageMsg: {
+    width: 200,
+    height: 200,
+    borderRadius: 14,
+    marginBottom: 8,
+  },
+
+  /* INPUT */
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    padding: 10,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 0.5,
+    borderColor: '#E5E7EB',
+  },
+
+  input: {
+    flex: 1,
+    backgroundColor: COLORS.inputBg,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginHorizontal: 8,
+    fontSize: 16,
+    maxHeight: 120,
+  },
+
+  iconBtn: {
+    padding: 8,
+  },
+
+  sendBtn: {
+    backgroundColor: COLORS.primary,
+    padding: 12,
+    borderRadius: 24,
+  },
+
+  /* IMAGE PREVIEW */
+  previewCard: {
+    marginHorizontal: 14,
+    marginBottom: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...SHADOW,
+  },
+
+  previewImg: {
+    width: '100%',
+    height: 180,
+  },
+
+  removeBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: 16,
+    padding: 6,
+  },
 });

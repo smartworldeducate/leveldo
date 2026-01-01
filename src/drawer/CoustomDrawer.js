@@ -1,10 +1,21 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { Briefcase, DollarSign, LogOut } from 'lucide-react-native';
+import {
+  Briefcase,
+  ClipboardList,
+  Map,
+  PlusCircle,
+  Layers,
+  Users,
+  CreditCard,
+  LogOut,
+} from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ✅ White/light theme object
+/* =========================
+   THEME
+========================= */
 const theme = {
   colors: {
     background: '#FFFFFF',
@@ -34,15 +45,17 @@ const theme = {
   },
 };
 
+/* =========================
+   CUSTOM DRAWER
+========================= */
 export default function CustomDrawer(props) {
-
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('user');
       alert('Logged Out');
       props.navigation.replace('LoginScreen');
     } catch (error) {
-      console.log('Error removing user from AsyncStorage:', error);
+      console.log('Logout error:', error);
     }
   };
 
@@ -50,90 +63,136 @@ export default function CustomDrawer(props) {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.innerContainer}>
-          {/* Header */}
+
+          {/* ===== HEADER ===== */}
           <View style={styles.header}>
             <View style={[styles.logoCircle, { backgroundColor: theme.colors.overlay }]}>
               <Briefcase size={36} color={theme.colors.accent} />
             </View>
             <View>
-              <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>Leveldo</Text>
-              <Text style={[styles.headerSub, { color: theme.colors.textSecondary }]}>Manage tasks & users</Text>
+              <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>
+                Leveldo
+              </Text>
+              <Text style={[styles.headerSub, { color: theme.colors.textSecondary }]}>
+                Manage tasks & users
+              </Text>
             </View>
           </View>
 
-          {/* Menu Items */}
+          {/* ===== MENU ITEMS ===== */}
           <View style={styles.menuContainer}>
             <DrawerItem
-              icon={<DollarSign size={24} color={theme.colors.primary} />}
-              label="Testmap"
+              icon={<ClipboardList size={24} color={theme.colors.primary} />}
+              label="Manage Request"
+              onPress={() => props.navigation.navigate('PMHomeScreen')}
+              theme={theme}
+            />
+
+            <DrawerItem
+              icon={<Map size={24} color={theme.colors.primary} />}
+              label="Test Map"
               onPress={() => props.navigation.navigate('Testmap')}
               theme={theme}
             />
+
             <DrawerItem
-              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              icon={<PlusCircle size={24} color={theme.colors.primary} />}
               label="Create Request"
               onPress={() => props.navigation.navigate('CreateRequestScreen')}
               theme={theme}
             />
+
             <DrawerItem
-              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              icon={<Layers size={24} color={theme.colors.primary} />}
               label="All Requests"
               onPress={() => props.navigation.navigate('ProviderRequestsScreen')}
               theme={theme}
             />
+
             <DrawerItem
-              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              icon={<Users size={24} color={theme.colors.primary} />}
               label="Customer Offers"
               onPress={() => props.navigation.navigate('CustomerOffers')}
               theme={theme}
             />
+
             <DrawerItem
-              icon={<DollarSign size={24} color={theme.colors.primary} />}
+              icon={<Briefcase size={24} color={theme.colors.primary} />}
               label="Provider Requests"
               onPress={() => props.navigation.navigate('ProviderRequest')}
               theme={theme}
             />
+
             <DrawerItem
-              icon={<DollarSign size={24} color={theme.colors.primary} />}
-              label="PaymentScreen"
+              icon={<CreditCard size={24} color={theme.colors.primary} />}
+              label="Payments"
               onPress={() => props.navigation.navigate('PaymentScreen')}
               theme={theme}
             />
           </View>
 
-          {/* Footer */}
+          {/* ===== FOOTER ===== */}
           <View style={styles.footer}>
-            <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: theme.colors.logoutBg }]} onPress={handleLogout}>
+            <TouchableOpacity
+              style={[styles.logoutBtn, { backgroundColor: theme.colors.logoutBg }]}
+              onPress={handleLogout}
+            >
               <LogOut size={22} color={theme.colors.primary} />
-              <Text style={[styles.logoutText, { color: theme.colors.primary }]}>Logout</Text>
+              <Text style={[styles.logoutText, { color: theme.colors.primary }]}>
+                Logout
+              </Text>
             </TouchableOpacity>
-            <Text style={[styles.versionText, { color: theme.colors.textSecondary }]}>Version 1.0.0</Text>
+
+            <Text style={[styles.versionText, { color: theme.colors.textSecondary }]}>
+              Version 1.0.0
+            </Text>
           </View>
+
         </View>
       </ScrollView>
     </View>
   );
 }
 
-/* Drawer Item Component */
+/* =========================
+   DRAWER ITEM
+========================= */
 const DrawerItem = ({ icon, label, onPress, theme }) => (
-  <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.8}>
+  <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.85}>
     <LinearGradient
       colors={[theme.colors.overlay, theme.colors.overlayLight]}
       style={styles.itemBackground}
     >
-      <View style={[styles.iconContainer, { backgroundColor: theme.colors.itemBg }]}>{icon}</View>
-      <Text style={[styles.itemText, { color: theme.colors.textPrimary }]}>{label}</Text>
+      <View style={[styles.iconContainer, { backgroundColor: theme.colors.itemBg }]}>
+        {icon}
+      </View>
+      <Text style={[styles.itemText, { color: theme.colors.textPrimary }]}>
+        {label}
+      </Text>
     </LinearGradient>
   </TouchableOpacity>
 );
 
+/* =========================
+   STYLES
+========================= */
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  innerContainer: { flex: 1, paddingTop: 60, paddingHorizontal: 20, justifyContent: 'space-between' },
+  container: {
+    flex: 1,
+  },
+  innerContainer: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+  },
 
-  // Header
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
+  /* Header */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
   logoCircle: {
     width: 70,
     height: 70,
@@ -149,23 +208,31 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  headerTitle: { fontSize: theme.font.title, fontWeight: '800', letterSpacing: 0.5 },
-  headerSub: { fontSize: theme.font.subtitle, marginTop: 2 },
+  headerTitle: {
+    fontSize: theme.font.title,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  headerSub: {
+    fontSize: theme.font.subtitle,
+    marginTop: 2,
+  },
 
-  // Menu
-  menuContainer: { flex: 1 },
-  item: { marginBottom: 16, borderRadius: theme.borderRadius, overflow: 'hidden' },
+  /* Menu */
+  menuContainer: {
+    flex: 1,
+  },
+  item: {
+    marginBottom: 16,
+    borderRadius: theme.borderRadius,
+    overflow: 'hidden',
+  },
   itemBackground: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: theme.spacing.medium,
     paddingHorizontal: theme.spacing.medium,
     borderRadius: theme.borderRadius,
-    // shadowColor: '#000',
-    // shadowOpacity: 0.03,
-    // shadowOffset: { width: 0, height: 3 },
-    // shadowRadius: 5,
-    // elevation: 2,
   },
   iconContainer: {
     width: 38,
@@ -175,10 +242,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
-  itemText: { fontSize: theme.font.item, fontWeight: '600', letterSpacing: 0.5 },
+  itemText: {
+    fontSize: theme.font.item,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
 
-  // Footer
-  footer: { marginBottom: 30 },
+  /* Footer */
+  footer: {
+    marginBottom: 30,
+  },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -195,6 +268,13 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  logoutText: { fontWeight: '700', fontSize: theme.font.footer, marginLeft: 10 },
-  versionText: { textAlign: 'center', fontSize: theme.font.version },
+  logoutText: {
+    fontWeight: '700',
+    fontSize: theme.font.footer,
+    marginLeft: 10,
+  },
+  versionText: {
+    textAlign: 'center',
+    fontSize: theme.font.version,
+  },
 });

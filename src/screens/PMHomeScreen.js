@@ -1,152 +1,305 @@
-// UsersScreen.js
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
+  FlatList,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
-  StatusBar,
+  Image,
+  Alert,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import firestore from '@react-native-firebase/firestore';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import Header from '../components/Header';
+import { Trash2 } from 'lucide-react-native';
 
-const PMScreen = ({ navigation }) => {
+const COLORS = {
+  background: '#F4F6FB',
+  card: '#FFFFFF',
+  text: '#111827',
+  muted: '#6B7280',
+  border: '#E5E7EB',
+  pendingBg: '#FEF3C7',
+  approvedBg: '#DCFCE7',
+  pendingText: '#92400E',
+  approvedText: '#065F46',
+  danger: '#DC2626',
+  dangerBg: '#FEE2E2',
+};
+
+export default function PMHomescreen() {
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState([]);
+  const [requests, setRequests] = useState([]);
 
-  // ==========================
-  const loadUsers = useCallback(async () => {
+  const loadRequests = useCallback(async () => {
     try {
       setLoading(true);
-      const snapshot = await firestore().collection('users').get();
-      const usersArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setUsers(usersArray);
+      const snap = await firestore().collection('serviceRequests').get();
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      data.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() -
+          new Date(a.createdAt).getTime()
+      );
+
+      setRequests(data);
       setLoading(false);
     } catch (err) {
-      console.log('Error loading users:', err);
+      console.log('Error loading requests:', err);
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    loadRequests();
+  }, [loadRequests]);
 
-  // ==========================
-  const deleteUser = (userId) => {
+  const deleteRequest = id => {
     Alert.alert(
-      'Confirm Delete',
-      'Are you sure you want to delete this user?',
+      'Delete Request',
+      'This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await firestore().collection('users').doc(userId).delete();
-              Alert.alert('Deleted', 'User has been deleted successfully');
-              loadUsers();
-            } catch (err) {
-              console.log('Delete error:', err);
-              Alert.alert('Error', 'Failed to delete user');
-            }
+            await firestore()
+              .collection('serviceRequests')
+              .doc(id)
+              .delete();
+
+            setRequests(prev => prev.filter(r => r.id !== id));
           },
         },
       ]
     );
   };
 
-  // ==========================
+  const renderCard = ({ item }) => {
+    const isPending = (item.status || '').toLowerCase() === 'open';
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={styles.card}
+      >
+        {/* Avatar */}
+        <Image
+          source={{ uri: item.customerImage || 'https://i.pravatar.cc/150' }}
+          style={styles.avatar}
+        />
+
+        {/* Content */}
+        <View style={styles.content}>
+          <View style={styles.topRow}>
+            <Text style={styles.title} numberOfLines={1}>
+              {item.title || 'Untitled Request'}
+            </Text>
+
+            <View
+              style={[
+                styles.statusPill,
+                isPending ? styles.pendingPill : styles.approvedPill,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusText,
+                  isPending ? styles.pendingText : styles.approvedText,
+                ]}
+              >
+                {isPending ? 'OPEN' : 'APPROVED'}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.name}>
+            {item.customerName || 'Unknown Customer'}
+          </Text>
+
+          <Text style={styles.meta}>
+            {item.category || 'N/A'} • ₹{item.budget || 0}
+          </Text>
+
+          {item.description ? (
+            <Text style={styles.description} numberOfLines={2}>
+              {item.description}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Action */}
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => deleteRequest(item.id)}
+        >
+          <Trash2 size={18} color={COLORS.danger} />
+        </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  };
+
   if (loading) {
     return (
-      <LinearGradient colors={['#1D2671', '#C33764']} style={styles.loading}>
-        <ActivityIndicator size="large" color="#FFD700" />
-      </LinearGradient>
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={COLORS.text} />
+        <Text style={styles.loadingText}>Loading requests…</Text>
+      </View>
     );
   }
 
   return (
-    <LinearGradient colors={['#1D2671', '#C33764']} style={styles.container}>
-      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-     <View style={{ marginTop: hp(6), marginHorizontal: hp(1.5) }}>
-        <Header navigation={navigation} title="All Users" />
-      </View>
-
+    <View style={styles.container}>
       <FlatList
-        data={users}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        renderItem={({ item }) => (
-          <LinearGradient colors={['#ffffff15', '#ffffff05']} style={styles.card}>
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.name || 'No Name'}</Text>
-                <Text style={styles.email}>{item.email || 'No Email'}</Text>
-                <Text style={styles.role}>Role: {item.role || 'N/A'}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.deleteBtn}
-                onPress={() => deleteUser(item.id)}
-              >
-                <Text style={styles.deleteBtnText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        )}
-        ListEmptyComponent={<Text style={styles.noUserText}>No Users Found</Text>}
+        data={requests}
+        keyExtractor={item => item.id}
+        renderItem={renderCard}
+        contentContainerStyle={{
+          paddingBottom: 28,
+          paddingTop: 4,
+        }}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={
+          <View style={styles.noData}>
+            <Text style={styles.noDataText}>
+              No service requests available
+            </Text>
+          </View>
+        }
       />
-    </LinearGradient>
+    </View>
   );
-};
+}
 
-// ======================
-// Styles
-// ======================
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
 
-  heading: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFD700',
-    textAlign: 'center',
-    marginTop: hp('5%'),
-    marginBottom: 20,
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.muted,
   },
 
   card: {
-    padding: 16,
+    flexDirection: 'row',
+    backgroundColor: COLORS.card,
+    padding: 18,
+    marginHorizontal: 16,
     borderRadius: 18,
-    marginHorizontal: wp('5%'),
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#FFD700',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'flex-start',
+
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 10 },
+    // shadowOpacity: 0.08,
+    // shadowRadius: 14,
+    // elevation: 5,
   },
 
-  row: { flexDirection: 'row', alignItems: 'center' },
-
-  name: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  email: { fontSize: 14, color: '#eee', marginTop: 2 },
-  role: { fontSize: 13, color: '#FFD700', marginTop: 4 },
-
-  deleteBtn: {
-    backgroundColor: '#FF4C4C',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 14,
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginRight: 14,
+    backgroundColor: '#E5E7EB',
   },
-  deleteBtnText: { color: '#fff', fontWeight: '700' },
 
-  noUserText: { color: '#fff', fontSize: 18, textAlign: 'center', marginTop: 100 },
+  content: {
+    flex: 1,
+  },
 
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+
+  title: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+
+  name: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.muted,
+    marginTop: 6,
+  },
+
+  meta: {
+    fontSize: 13,
+    color: COLORS.muted,
+    marginTop: 2,
+  },
+
+  description: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#374151',
+    marginTop: 8,
+  },
+
+  statusPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+
+  statusText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+  },
+
+  pendingPill: {
+    backgroundColor: COLORS.pendingBg,
+  },
+
+  approvedPill: {
+    backgroundColor: COLORS.approvedBg,
+  },
+
+  pendingText: {
+    color: COLORS.pendingText,
+  },
+
+  approvedText: {
+    color: COLORS.approvedText,
+  },
+
+  deleteButton: {
+    marginLeft: 12,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: COLORS.dangerBg,
+    alignSelf: 'flex-start',
+  },
+
+  separator: {
+    height: 14,
+  },
+
+  noData: {
+    marginTop: 80,
+    alignItems: 'center',
+  },
+
+  noDataText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.muted,
+  },
 });
-
-export default PMScreen;

@@ -683,84 +683,6 @@ const chatRef = await firestore().collection('chats').add({
   return (
   <View style={styles.pageBackground}>
     <StatusBar barStyle="dark-content" backgroundColor="#f3f6f7" />
-  {/* {showMapModal && (
-  <Modal visible={showMapModal} animationType="slide" transparent={false}>
-    <View style={{ flex: 1 }}>
-      <TouchableOpacity
-        style={{ position: 'absolute', top: 40, right: 20, zIndex: 999 }}
-        onPress={() => setShowMapModal(false)}
-      >
-        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Close</Text>
-      </TouchableOpacity>
-
-      <WebView
-        ref={mapRef}
-        originWhitelist={['*']}
-        source={{ html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-          <meta name="viewport" content="initial-scale=1.0,width=device-width" />
-          <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-          <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-          <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-          <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-          <style>
-          body, html { margin:0; padding:0; width:100%; height:100%; }
-          #map { height:100vh; width:100vw; }
-          .eta-box {
-            background: white;
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            margin-top: 12px;
-            margin-right: 12px;
-          }
-          </style>
-          </head>
-          <body>
-          <div id="map"></div>
-          <script>
-          var customerLat = ${mapCoords.customerLat};
-          var customerLng = ${mapCoords.customerLng};
-          var providerLat = ${mapCoords.providerLat};
-          var providerLng = ${mapCoords.providerLng};
-
-          var map = L.map('map').setView([(customerLat + providerLat)/2, (customerLng + providerLng)/2], 13);
-
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20 }).addTo(map);
-
-          var customerIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/128/15735/15735364.png', iconSize: [50,50], iconAnchor: [25,50] });
-          var providerIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/128/741/741407.png', iconSize: [50,50], iconAnchor: [25,50] });
-
-          var customerMarker = L.marker([customerLat, customerLng], { icon: customerIcon }).addTo(map);
-          var providerMarker = L.marker([providerLat, providerLng], { icon: providerIcon }).addTo(map);
-
-          var routeControl = L.Routing.control({
-            waypoints: [ L.latLng(providerLat, providerLng), L.latLng(customerLat, customerLng) ],
-            addWaypoints: false,
-            draggableWaypoints: false,
-            createMarker: () => null,
-            lineOptions: { styles: [{ color: "#4CAF50", weight: 5 }] }
-          }).addTo(map);
-
-          function updateProviderMarker(lat, lng) {
-            providerMarker.setLatLng([lat, lng]);
-            routeControl.setWaypoints([ L.latLng(lat, lng), L.latLng(customerLat, customerLng) ]);
-          }
-
-          window.updateProviderMarker = updateProviderMarker;
-          </script>
-          </body>
-          </html>
-        ` }}
-      />
-    </View>
-  </Modal>
-)} */}
-
     {/* ================= HEADER ================= */}
     <View style={styles.header}>
       <TouchableOpacity style={styles.profileRow} onPress={() => navigation.navigate('ProfileScreen')}>
@@ -797,7 +719,7 @@ const chatRef = await firestore().collection('chats').add({
 
     {/* ================= REQUEST LIST ================= */}
     <FlatList
-      style={{ marginTop: hp('22%') }}
+      style={{ marginTop: hp('2') }}
       data={requests}
       keyExtractor={item => item.id}
       contentContainerStyle={{ paddingBottom: 160 }}
@@ -922,19 +844,16 @@ const styles = StyleSheet.create({
   pageBackground: {
     flex: 1,
     backgroundColor: '#f3f6f7',
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
+    // paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40,
   },
 
   /* ================= HEADER ================= */
   header: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    right: 20,
-    zIndex: 999,
+    paddingHorizontal:hp(2.5),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginVertical:hp(2),
 
   },
 
@@ -961,10 +880,8 @@ const styles = StyleSheet.create({
 
   /* ================= PROMO BANNER ================= */
   promoBanner: {
-    position: 'absolute',
-    top: hp('12%'),
-    left: wp('5%'),
-    right: wp('5%'),
+    marginHorizontal:hp(2.5),
+    marginVertical:hp(0),
     zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
